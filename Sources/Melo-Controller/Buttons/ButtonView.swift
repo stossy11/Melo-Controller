@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ButtonView: View {
+public struct ButtonView: View {
     var disabled: Bool
     var controller: any Controller
     var button: VirtualControllerButton
@@ -25,7 +25,7 @@ struct ButtonView: View {
     @State private var toggleState = false
     @State private var size: CGSize = .zero
     
-    init(controller: any Controller, disabled: Bool = false, button: VirtualControllerButton, opacity: Double = 1.0, layout: Binding<LayoutConfig> = .constant(LayoutConfig())) {
+    public init(controller: any Controller, disabled: Bool = false, button: VirtualControllerButton, opacity: Double = 1.0, layout: Binding<LayoutConfig> = .constant(LayoutConfig())) {
         self.controller = controller
         self.disabled = disabled
         self.button = button
@@ -40,7 +40,7 @@ struct ButtonView: View {
         }
     }
     
-    var body: some View {
+    public var body: some View {
         Circle()
             .foregroundStyle(.clear.opacity(0))
             .overlay {
