@@ -145,7 +145,7 @@ public struct ButtonView: View {
         if joystickDpad, button.isDPad {
             joystickDpadPoint.released(button); return
         }
-        controller.buttonPressed(button)
+        controller.buttonReleased(button)
     }
     
     private func calculateButtonSize() -> CGSize {
