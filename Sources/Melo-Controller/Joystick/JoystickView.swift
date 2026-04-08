@@ -52,7 +52,7 @@ struct EditableJoystickView: View {
                         }
                 )
         } else {
-            JoystickViewRepresentable(controller: controller, right: iscool, showBackground: layout.joysticks[id]?.background ?? false)
+            JoystickViewRepresentable(controller: controller, right: iscool, showBackground: $showBackground)
                 .frame(width: 160, height: 160)
                 .scaleEffect(layout.joysticks[id]?.scale ?? CGFloat(controllerScale))
                 .offset(layout.joysticks[id]?.offset ?? .zero)

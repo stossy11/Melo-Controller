@@ -10,12 +10,12 @@ import SwiftUI
 
 struct JoystickViewRepresentable: UIViewRepresentable {
     var right: Bool
-    var showBackground: Bool
+    @Binding var showBackground: Bool
     var controller: any Controller
     
-    init(controller: any Controller, right: Bool, showBackground: Bool = false) {
+    init(controller: any Controller, right: Bool, showBackground: Binding<Bool>) {
         self.right = right
-        self.showBackground = showBackground
+        self._showBackground = showBackground
         self.controller = controller
     }
     
@@ -29,6 +29,12 @@ struct JoystickViewRepresentable: UIViewRepresentable {
                 controller.joystickMoved(position: newPosition, right: right)
             }
         }
+        
+        view.onActiveChanged = { active in
+               DispatchQueue.main.async {
+                   showBackground = active
+               }
+           }
         
         return view
     }

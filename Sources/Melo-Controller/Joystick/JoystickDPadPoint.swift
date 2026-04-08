@@ -13,6 +13,7 @@ class JoystickDPadPoint: ObservableObject {
     var controller: (any Controller)? = nil
     @Published var joystickDpadPoint: (x: Double, y: Double) = (0, 0)
     @Published var currentlyPressed: Set<VirtualControllerButton> = []
+    @Published var isJoystickActive: Bool = false
     
     
     func pressed(_ button: VirtualControllerButton) {

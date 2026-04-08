@@ -29,6 +29,7 @@ final class JoystickView: UIView {
     private var boundarySize: CGFloat { dragDiameter }
     
     var onPositionChanged: ((CGPoint) -> Void)?
+    var onActiveChanged: ((Bool) -> Void)?
     
     private let boundaryView          = UIView()
     private let backgroundView        = UIView()
@@ -127,6 +128,7 @@ final class JoystickView: UIView {
                 self.joystickView.transform = CGAffineTransform(scaleX: 1.12, y: 1.12)
                 self.joystickBackgroundView.transform = CGAffineTransform(scaleX: 1.08, y: 1.08)
             }
+            onActiveChanged?(true)
 
         case .changed:
             let distance = hypot(translation.x, translation.y)
@@ -159,6 +161,7 @@ final class JoystickView: UIView {
             animateBackground(show: false)
             onPositionChanged?(.zero)
             springReturnToCenter()
+            onActiveChanged?(false)
 
         default:
             break
