@@ -9,7 +9,6 @@ import UIKit
 import SwiftUI
 
 class ControllerUIButton: UIButton {
-    
     private var isPressing = false
     
     var onPress: (() -> Void)?
@@ -26,34 +25,27 @@ class ControllerUIButton: UIButton {
     }
     
     private func setupButton() {
-        self.backgroundColor = .clear
-        self.isUserInteractionEnabled = true
-        self.isMultipleTouchEnabled = false
+        backgroundColor = .clear
+        isUserInteractionEnabled = true
+        isMultipleTouchEnabled = false
         
-        self.addTarget(self, action: #selector(handleTap), for: .touchDown)
-        self.addTarget(self, action: #selector(handleRelease), for: .touchUpInside)
+        addTarget(self, action: #selector(handlePress), for: .touchDown)
+        addTarget(self, action: #selector(handleRelease), for: .touchUpInside)
+        addTarget(self, action: #selector(handleRelease), for: .touchUpOutside)
+        addTarget(self, action: #selector(handleRelease), for: .touchDragExit)
+        addTarget(self, action: #selector(handleRelease), for: .touchCancel)
     }
     
-    @objc private func handleTap(_ sender: UIButton) {
-        press()
+    @objc private func handlePress() {
+        guard !isPressing else { return }
+        isPressing = true
+        onPress?()
     }
     
-    @objc private func handleRelease(_ sender: UIButton) {
-        release()
-    }
-    
-    func press() {
-        if !isPressing {
-            isPressing = true
-            onPress?()
-        }
-    }
-    
-    func release() {
-        if isPressing {
-            isPressing = false
-            onRelease?()
-        }
+    @objc private func handleRelease() {
+        guard isPressing else { return }
+        isPressing = false
+        onRelease?()
     }
 }
 
