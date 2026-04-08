@@ -77,7 +77,7 @@ final class JoystickView: UIView {
         joystickView.layer.shadowRadius  = 4
 
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
-        joystickView.addGestureRecognizer(pan)
+        addGestureRecognizer(pan)
 
         edgeImpact.prepare()
     }
