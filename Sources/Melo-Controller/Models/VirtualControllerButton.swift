@@ -9,6 +9,7 @@ import Foundation
 
 public struct VirtualControllerButton: Hashable, Codable, Identifiable {
     public let id: String
+    public var iconName: String? = nil
     
     public init(_ id: String) {
         self.id = id
@@ -16,6 +17,7 @@ public struct VirtualControllerButton: Hashable, Codable, Identifiable {
     
     public init(_ id: String, systemName: String) {
         self.id = id
+        self.iconName = systemName
         
         ButtonRegistry.shared.register(self, config: .init(iconName: systemName))
     }
