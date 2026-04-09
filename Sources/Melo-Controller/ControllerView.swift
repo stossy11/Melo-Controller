@@ -27,8 +27,6 @@ public struct ControllerView: View {
         self.isEditing = isEditing
         self.gameId = gameId
         self.controller = controller
-        
-        _ = ButtonRegistry.shared
     }
     
     @State private var layout: LayoutConfig = LayoutConfig()

@@ -14,26 +14,3 @@ public struct ButtonConfiguration {
         self.iconName = iconName
     }
 }
-
-public final class ButtonRegistry {
-    public static var shared = ButtonRegistry()
-    
-    private var configs: [VirtualControllerButton: ButtonConfiguration] = [:]
-    
-    
-    public func register(_ button: VirtualControllerButton, config: ButtonConfiguration) {
-        configs[button] = config
-    }
-    
-    public func deregister(_ button: VirtualControllerButton) {
-        configs.removeValue(forKey: button)
-    }
-    
-    public func deregisterAll() {
-        configs.removeAll()
-    }
-    
-    public func config(for button: VirtualControllerButton) -> ButtonConfiguration? {
-        configs[button]
-    }
-}
