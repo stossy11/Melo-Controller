@@ -21,22 +21,12 @@ public final class ButtonRegistry {
     private var configs: [VirtualControllerButton: ButtonConfiguration] = [:]
     
     
-    private init() {
-        VirtualControllerButton.registerDefaults()
-    }
-    
     public func register(_ button: VirtualControllerButton, config: ButtonConfiguration) {
         configs[button] = config
     }
     
     public func deregister(_ button: VirtualControllerButton) {
         configs.removeValue(forKey: button)
-    }
-    
-    public func deregisterDefaults() {
-        for button in VirtualControllerButton.defaultConfigs.keys {
-            configs.removeValue(forKey: button)
-        }
     }
     
     public func deregisterAll() {

@@ -13,6 +13,12 @@ public struct VirtualControllerButton: Hashable, Codable, Identifiable {
     public init(_ id: String) {
         self.id = id
     }
+    
+    public init(_ id: String, systemName: String) {
+        self.id = id
+        
+        ButtonRegistry.shared.register(self, config: .init(iconName: systemName))
+    }
 }
 
 public extension VirtualControllerButton {
@@ -30,48 +36,21 @@ public extension VirtualControllerButton {
 }
 
 public extension VirtualControllerButton {
-    static let A = Self("A")
-    static let B = Self("B")
-    static let X = Self("X")
-    static let Y = Self("Y")
-    static let back = Self("back")
-    static let guide = Self("guide")
-    static let start = Self("start")
-    static let leftStick = Self("leftStick")
-    static let rightStick = Self("rightStick")
-    static let leftShoulder = Self("leftShoulder")
-    static let rightShoulder = Self("rightShoulder")
-    static let dPadUp = Self("dPadUp")
-    static let dPadDown = Self("dPadDown")
-    static let dPadLeft = Self("dPadLeft")
-    static let dPadRight = Self("dPadRight")
-    static let leftTrigger = Self("leftTrigger")
-    static let rightTrigger = Self("rightTrigger")
-    
-    static let defaultConfigs: [VirtualControllerButton: String] = [
-        .A: "a.circle.fill",
-        .B: "b.circle.fill",
-        .X: "x.circle.fill",
-        .Y: "y.circle.fill",
-        .leftStick: "l.joystick.press.down.fill",
-        .rightStick: "r.joystick.press.down.fill",
-        .dPadUp: "arrowtriangle.up.circle.fill",
-        .dPadDown: "arrowtriangle.down.circle.fill",
-        .dPadLeft: "arrowtriangle.left.circle.fill",
-        .dPadRight: "arrowtriangle.right.circle.fill",
-        .leftTrigger: "zl.rectangle.roundedtop.fill",
-        .rightTrigger: "zr.rectangle.roundedtop.fill",
-        .leftShoulder: "l.rectangle.roundedbottom.fill",
-        .rightShoulder: "r.rectangle.roundedbottom.fill",
-        .start: "plus.circle.fill",
-        .back: "minus.circle.fill",
-        .guide: "gearshape.fill"
-    ]
-
-    static func registerDefaults() {
-        let register = ButtonRegistry.shared.register
-        for (button, icon) in defaultConfigs {
-            register(button, .init(iconName: icon))
-        }
-    }
+    static let A = Self("A", systemName: "a.circle.fill")
+    static let B = Self("B", systemName: "a.circle.fill")
+    static let X = Self("X", systemName: "a.circle.fill")
+    static let Y = Self("Y", systemName: "a.circle.fill")
+    static let back = Self("back", systemName: "a.circle.fill")
+    static let guide = Self("guide", systemName: "a.circle.fill")
+    static let start = Self("start", systemName: "a.circle.fill")
+    static let leftStick = Self("leftStick", systemName: "a.circle.fill")
+    static let rightStick = Self("rightStick", systemName: "a.circle.fill")
+    static let leftShoulder = Self("leftShoulder", systemName: "a.circle.fill")
+    static let rightShoulder = Self("rightShoulder", systemName: "a.circle.fill")
+    static let dPadUp = Self("dPadUp", systemName: "a.circle.fill")
+    static let dPadDown = Self("dPadDown", systemName: "a.circle.fill")
+    static let dPadLeft = Self("dPadLeft", systemName: "a.circle.fill")
+    static let dPadRight = Self("dPadRight", systemName: "a.circle.fill")
+    static let leftTrigger = Self("leftTrigger", systemName: "a.circle.fill")
+    static let rightTrigger = Self("rightTrigger", systemName: "a.circle.fill")
 }
