@@ -9,6 +9,10 @@ import SwiftUI
 
 public struct ButtonConfiguration {
     public let iconName: String
+    
+    public init(iconName: String) {
+        self.iconName = iconName
+    }
 }
 
 public final class ButtonRegistry {
