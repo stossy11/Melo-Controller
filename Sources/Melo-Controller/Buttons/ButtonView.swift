@@ -173,6 +173,6 @@ public struct ButtonView: View {
     }
     
     private var buttonConfig: ButtonConfiguration {
-        ButtonConfiguration.config(for: button)
+        ButtonRegistry.shared.config(for: button) ?? .init(iconName: VirtualControllerButton.defaultConfigs[.A]!)
     }
 }

@@ -84,7 +84,3 @@ class LayoutManager {
         }
     }
 }
-
-extension VirtualControllerButton: Identifiable {
-    public var id: String { "\(self)" }
-}
