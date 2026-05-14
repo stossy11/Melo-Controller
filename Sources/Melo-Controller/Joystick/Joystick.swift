@@ -111,58 +111,49 @@ final class JoystickView: UIView {
     }
     
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        let translation = gesture.translation(in: self)
+        let location = gesture.location(in: self)
+        
+        let rawOffset = CGPoint(
+            x: location.x - bounds.midX,
+            y: location.y - bounds.midY
+        )
         
         switch gesture.state {
         case .began:
             springAnimator?.stopAnimation(true)
             springAnimator = nil
-
+            
             didHitEdge = false
             edgeImpact.prepare()
             animateBackground(show: true)
-
-            // Knob grows slightly when grabbed
+            
+            processOffset(rawOffset)
+            updateJoystickPosition()
+            onPositionChanged?(normalizedPosition())
+            
             UIView.animate(withDuration: 0.12, delay: 0,
                            usingSpringWithDamping: 0.6, initialSpringVelocity: 1) {
                 self.joystickView.transform = CGAffineTransform(scaleX: 1.12, y: 1.12)
                 self.joystickBackgroundView.transform = CGAffineTransform(scaleX: 1.08, y: 1.08)
             }
             onActiveChanged?(true)
-
+            
         case .changed:
-            let distance = hypot(translation.x, translation.y)
-            let atEdge   = distance >= extendedRadius
-            
-            if atEdge {
-                let angle = atan2(translation.y, translation.x)
-                offset = CGPoint(
-                    x: cos(angle) * extendedRadius,
-                    y: sin(angle) * extendedRadius
-                )
-                
-                if !didHitEdge {
-                    edgeImpact.impactOccurred(intensity: 0.55)
-                    didHitEdge = true
-                }
-            } else {
-                offset     = translation
-                didHitEdge = false
-            }
-            
+            processOffset(rawOffset)
             updateJoystickPosition()
             onPositionChanged?(normalizedPosition())
+            
         case .ended, .cancelled:
             UIView.animate(withDuration: 0.15) {
                 self.joystickView.transform          = .identity
                 self.joystickBackgroundView.transform = .identity
             }
-
+            
             animateBackground(show: false)
             onPositionChanged?(.zero)
             springReturnToCenter()
             onActiveChanged?(false)
-
+            
         default:
             break
         }
@@ -181,6 +172,27 @@ final class JoystickView: UIView {
             x: max(-1, min(1, rx * scale * sensitivity)),
             y: max(-1, min(1, ry * scale * sensitivity))
         )
+    }
+    
+    private func processOffset(_ rawOffset: CGPoint) {
+        let distance = hypot(rawOffset.x, rawOffset.y)
+        let atEdge   = distance >= extendedRadius
+        
+        if atEdge {
+            let angle = atan2(rawOffset.y, rawOffset.x)
+            offset = CGPoint(
+                x: cos(angle) * extendedRadius,
+                y: sin(angle) * extendedRadius
+            )
+            
+            if !didHitEdge {
+                edgeImpact.impactOccurred(intensity: 0.55)
+                didHitEdge = true
+            }
+        } else {
+            offset     = rawOffset
+            didHitEdge = false
+        }
     }
     
     private func updateJoystickPosition() {
