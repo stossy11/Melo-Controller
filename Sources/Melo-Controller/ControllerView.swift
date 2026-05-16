@@ -64,7 +64,7 @@ public struct ControllerView: View {
     /// - A `Bool` indicating whether the device is currently in portrait orientation.
     ///
     /// Set to `nil` (the default) to use the automatic portrait/landscape layout.
-    @State var customControllerLayout: ((SubView, JoystickSubView, Bool) -> AnyView)? = nil
+    @State var customControllerLayout: ((@escaping SubView, @escaping JoystickSubView, Bool) -> AnyView)? = nil
 
     /// Creates a `ControllerView` with a custom button/joystick layout.
     ///
@@ -82,7 +82,7 @@ public struct ControllerView: View {
         controller: any Controller,
         isEditing: Bool,
         gameId: String? = nil,
-        @ViewBuilder customControllerLayout: @escaping (SubView, JoystickSubView, Bool) -> V
+        @ViewBuilder customControllerLayout: @escaping (@escaping SubView, @escaping JoystickSubView, Bool) -> V
     ) {
         self.isEditing = isEditing
         self.gameId = gameId
