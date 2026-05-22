@@ -89,6 +89,17 @@ public struct ControllerView: View {
         self.controller = controller
         self._customControllerLayout = State(initialValue: { s1, s2, s3 in AnyView(customControllerLayout(s1, s2, s3)) })
     }
+    
+    public init(
+        controller: any Controller,
+        isEditing: Bool,
+        gameId: String? = nil
+    ) {
+        self.isEditing = isEditing
+        self.gameId = gameId
+        self.controller = controller
+    }
+
 
     @State private var layout: LayoutConfig = LayoutConfig()
 
