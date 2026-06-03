@@ -37,6 +37,7 @@ struct LayoutEditorView: View {
     @State private var showingLayoutOptions = false
     
     @Environment(\.verticalSizeClass) var verticalSizeClass
+    @Environment(\.dismiss) var dismiss
     
     var gameId: String?
     
@@ -96,6 +97,7 @@ struct LayoutEditorView: View {
                         saveLayout()
                         selectedButton = nil
                         selectedJoystick = nil
+                        dismiss()
                     }
                     isEditing.toggle()
                 }
