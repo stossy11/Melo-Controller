@@ -30,7 +30,7 @@ public class LayoutExporter {
     public static var fileType = "meloLayout"
     
     public static var meloLayout = UTType(exportedAs: "com.stossy11.melocontroller.layout",
-                                   conformingTo: .json)
+                                   conformingTo: .data)
 }
 
 class LayoutManager {
