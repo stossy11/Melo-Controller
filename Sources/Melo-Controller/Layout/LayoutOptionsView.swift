@@ -172,9 +172,11 @@ struct LayoutOptionsView: View {
     
     private func exportCurrentLayout() {
         do {
-            let data = try LayoutManager.shared.exportLayout(for: gameId)
-            let fileName = LayoutManager.shared.exportFileName(for: gameId)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(layout)
             
+            let fileName = LayoutManager.shared.exportFileName(for: gameId)
             let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
             try data.write(to: tmpURL, options: .atomic)
             exportItem = LayoutExportItem(url: tmpURL)
