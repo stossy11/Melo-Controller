@@ -9,14 +9,14 @@ import SwiftUI
 
 class JoystickDPadUIHandler: ObservableObject {
     @Published var gameId: String?
-    @Published var uiUpdate = false
+    
     var joystickDpad: Bool {
         get {
-            uiUpdate.toggle()
-            return UserDefaults.standard.bool(forKey: "joystickDpad-\(gameId, default: "global")")
-        } set {
-            UserDefaults.standard.set(newValue, forKey: "joystickDpad-\(gameId, default: "global")")
-            uiUpdate.toggle()
+            UserDefaults.standard.bool(forKey: "joystickDpad-\(gameId ?? "global")")
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "joystickDpad-\(gameId ?? "global")")
+            objectWillChange.send()
         }
     }
 }
@@ -25,35 +25,30 @@ struct LayoutEditorView: View {
     @AppStorage("On-ScreenControllerScale") private var controllerScale: Double = 1.0
     @AppStorage("stickButton") private var stickButton = false
     @StateObject var joystickDpad = JoystickDPadUIHandler()
+    
     @Binding var hideDpad: Bool
     @Binding var hideABXY: Bool
     @Binding var isEditing: Bool
+    @Binding var showEditControls: Bool
+    @Binding var layout: LayoutConfig
+    
     @State private var selectedButton: String?
     @State private var selectedJoystick: String?
-    @Environment(\.verticalSizeClass) var verticalSizeClass
-    @Binding var showEditControls: Bool
-    
-    var gameId: String?
-    @Binding var layout: LayoutConfig
     @State private var showingLayoutOptions = false
     
-    private func loadLayout() {
-        joystickDpad.gameId = gameId
-        layout = LayoutManager.shared.load(for: gameId)
-        
-        let legacyLayout = LayoutManager.shared.loadLegacy(for: gameId)
-        if !legacyLayout.isEmpty && layout.buttons.isEmpty {
-            layout.buttons = legacyLayout
-            LayoutManager.shared.save(layout, for: gameId)
-        }
-    }
+    @Environment(\.verticalSizeClass) var verticalSizeClass
     
+    var gameId: String?
+    
+    private func syncDpadHandler() {
+        joystickDpad.gameId = gameId
+    }
     
     private func saveLayout() {
         LayoutManager.shared.save(layout, for: gameId)
     }
-
-    var body: some View  {
+    
+    var body: some View {
         VStack {
             HStack {
                 Button("Hide") {
@@ -110,7 +105,6 @@ struct LayoutEditorView: View {
             .background(.ultraThinMaterial)
             .cornerRadius(12)
             
-            // Game indicator
             if let gameId = gameId {
                 HStack {
                     Image(systemName: "gamecontroller.fill")
@@ -143,15 +137,17 @@ struct LayoutEditorView: View {
         }
         .padding()
         .onAppear {
-            loadLayout()
+            syncDpadHandler()
         }
         .onChange(of: gameId) { _ in
-            loadLayout()
+            syncDpadHandler()
         }
         .sheet(isPresented: $showingLayoutOptions) {
             LayoutOptionsView(gameId: gameId, layout: $layout)
         }
     }
+    
+    // MARK: Button scale controls
     
     private func buttonScaleControls(for buttonId: String) -> some View {
         VStack {
@@ -160,8 +156,8 @@ struct LayoutEditorView: View {
             
             HStack {
                 Button("-") {
-                    let currentScale = layout.buttons[buttonId]?.scale ?? 1.0
-                    layout.buttons[buttonId, default: ButtonLayout()].scale = max(0.5, currentScale - 0.1)
+                    let current = layout.buttons[buttonId]?.scale ?? 1.0
+                    layout.buttons[buttonId, default: ButtonLayout()].scale = max(0.5, current - 0.1)
                 }
                 .font(.title2)
                 .frame(width: 40, height: 40)
@@ -179,8 +175,8 @@ struct LayoutEditorView: View {
                 )
                 
                 Button("+") {
-                    let currentScale = layout.buttons[buttonId]?.scale ?? 1.0
-                    layout.buttons[buttonId, default: ButtonLayout()].scale = min(2.0, currentScale + 0.1)
+                    let current = layout.buttons[buttonId]?.scale ?? 1.0
+                    layout.buttons[buttonId, default: ButtonLayout()].scale = min(2.0, current + 0.1)
                 }
                 .font(.title2)
                 .frame(width: 40, height: 40)
@@ -189,27 +185,44 @@ struct LayoutEditorView: View {
                 .cornerRadius(8)
             }
             
-            Toggle(isOn: Binding(get: { layout.buttons[buttonId]?.hidden ?? false }, set: { layout.buttons[buttonId, default: ButtonLayout()].hidden = $0 })) {
+            Toggle(
+                isOn: Binding(
+                    get: { layout.buttons[buttonId]?.hidden ?? false },
+                    set: { layout.buttons[buttonId, default: ButtonLayout()].hidden = $0 }
+                )
+            ) {
                 Text("Hide Button")
             }
-            .accentColor(.blue)
+            .tint(.blue)
             
-            Toggle(isOn: Binding(get: { layout.buttons[buttonId]?.toggle ?? false }, set: { layout.buttons[buttonId, default: ButtonLayout()].toggle = $0 })) {
+            Toggle(
+                isOn: Binding(
+                    get: { layout.buttons[buttonId]?.toggle ?? false },
+                    set: { layout.buttons[buttonId, default: ButtonLayout()].toggle = $0 }
+                )
+            ) {
                 Text("Make Button Toggle")
             }
-            .accentColor(.blue)
+            .tint(.blue)
             
             if buttonId.lowercased().contains("dpad") {
-                Toggle(isOn: Binding(get: { joystickDpad.joystickDpad }, set: { joystickDpad.joystickDpad = $0 })) {
+                Toggle(
+                    isOn: Binding(
+                        get: { joystickDpad.joystickDpad },
+                        set: { joystickDpad.joystickDpad = $0 }
+                    )
+                ) {
                     Text("Make D-Pad act like Joystick")
                 }
-                .accentColor(.blue)
+                .tint(.blue)
             }
         }
         .padding()
         .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
+    
+    // MARK: Joystick scale controls
     
     private func joystickScaleControls(for joystickId: String) -> some View {
         VStack {
@@ -218,8 +231,8 @@ struct LayoutEditorView: View {
             
             HStack {
                 Button("-") {
-                    let currentScale = layout.joysticks[joystickId]?.scale ?? 1.0
-                    layout.joysticks[joystickId, default: JoystickLayout()].scale = max(0.5, currentScale - 0.1)
+                    let current = layout.joysticks[joystickId]?.scale ?? 1.0
+                    layout.joysticks[joystickId, default: JoystickLayout()].scale = max(0.5, current - 0.1)
                 }
                 .font(.title2)
                 .frame(width: 40, height: 40)
@@ -237,8 +250,8 @@ struct LayoutEditorView: View {
                 )
                 
                 Button("+") {
-                    let currentScale = layout.joysticks[joystickId]?.scale ?? 1.0
-                    layout.joysticks[joystickId, default: JoystickLayout()].scale = min(2.0, currentScale + 0.1)
+                    let current = layout.joysticks[joystickId]?.scale ?? 1.0
+                    layout.joysticks[joystickId, default: JoystickLayout()].scale = min(2.0, current + 0.1)
                 }
                 .font(.title2)
                 .frame(width: 40, height: 40)
@@ -247,24 +260,38 @@ struct LayoutEditorView: View {
                 .cornerRadius(8)
             }
             
-            Toggle(isOn: Binding(get: { layout.joysticks[joystickId]?.hidden ?? false }, set: { layout.joysticks[joystickId, default: JoystickLayout()].hide = $0 })) {
+            Toggle(
+                isOn: Binding(
+                    get: { layout.joysticks[joystickId]?.hidden ?? false },
+                    set: { layout.joysticks[joystickId, default: JoystickLayout()].hidden = $0 }
+                )
+            ) {
                 Text("Hide Joystick")
             }
-            .accentColor(.green)
+            .tint(.green)
             
-            Toggle(isOn: Binding(get: { layout.joysticks[joystickId]?.hide ?? true }, set: { layout.joysticks[joystickId, default: JoystickLayout()].hide = $0 })) {
+            Toggle(
+                isOn: Binding(
+                    get: { layout.joysticks[joystickId]?.hide ?? false },
+                    set: { layout.joysticks[joystickId, default: JoystickLayout()].hide = $0 }
+                )
+            ) {
                 Text("Hide ABXY / Arrow Buttons")
             }
-            .accentColor(.green)
+            .tint(.green)
             
-            Toggle(isOn: Binding(get: { layout.joysticks[joystickId]?.background ?? false }, set: { layout.joysticks[joystickId, default: JoystickLayout()].background = $0 })) {
+            Toggle(
+                isOn: Binding(
+                    get: { layout.joysticks[joystickId]?.background ?? false },
+                    set: { layout.joysticks[joystickId, default: JoystickLayout()].background = $0 }
+                )
+            ) {
                 Text("Always show Joystick Background")
             }
-            .accentColor(.green)
+            .tint(.green)
         }
         .padding()
         .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
-
 }

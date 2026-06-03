@@ -6,13 +6,26 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
+
+extension UTType {
+    static var meloLayout: UTType { LayoutExporter.meloLayout }
+}
 
 struct LayoutOptionsView: View {
     let gameId: String?
     @Binding var layout: LayoutConfig
     @Environment(\.presentationMode) var presentationMode
+    
     @State private var showingResetAlert = false
     @State private var showingCopySheet = false
+    @State private var showingFileImporter = false
+    
+    @State private var exportItem: LayoutExportItem?
+    
+    @State private var alertTitle = ""
+    @State private var alertMessage = ""
+    @State private var showingAlert = false
     
     var body: some View {
         NavigationView {
@@ -51,12 +64,10 @@ struct LayoutOptionsView: View {
                     Text("Layout Actions")
                         .font(.headline)
                     
-                    Button(action: {
-                        showingCopySheet = true
-                    }) {
+                    Button(action: { showingCopySheet = true }) {
                         HStack {
                             Image(systemName: "doc.on.doc")
-                            Text("Copy Layout From...")
+                            Text("Copy Layout From…")
                             Spacer()
                             Image(systemName: "chevron.right")
                         }
@@ -64,6 +75,42 @@ struct LayoutOptionsView: View {
                         .background(Color.blue.opacity(0.1))
                         .foregroundColor(.blue)
                         .cornerRadius(8)
+                    }
+                    
+                    Button(action: exportCurrentLayout) {
+                        HStack {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Export Layout…")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                        }
+                        .padding()
+                        .background(Color.purple.opacity(0.1))
+                        .foregroundColor(.purple)
+                        .cornerRadius(8)
+                    }
+                    .sheet(item: $exportItem) { item in
+                        ShareSheet(activityItems: [item.url])
+                    }
+                    
+                    Button(action: { showingFileImporter = true }) {
+                        HStack {
+                            Image(systemName: "square.and.arrow.down")
+                            Text("Import Layout…")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                        }
+                        .padding()
+                        .background(Color.teal.opacity(0.1))
+                        .foregroundColor(.teal)
+                        .cornerRadius(8)
+                    }
+                    .fileImporter(
+                        isPresented: $showingFileImporter,
+                        allowedContentTypes: [.meloLayout, .json],
+                        allowsMultipleSelection: false
+                    ) { result in
+                        handleImport(result: result)
                     }
                     
                     Button(action: {
@@ -81,9 +128,7 @@ struct LayoutOptionsView: View {
                         .cornerRadius(8)
                     }
                     
-                    Button(action: {
-                        showingResetAlert = true
-                    }) {
+                    Button(action: { showingResetAlert = true }) {
                         HStack {
                             Image(systemName: "trash")
                             Text("Delete Custom Layout")
@@ -107,7 +152,7 @@ struct LayoutOptionsView: View {
             })
         }
         .alert("Delete Custom Layout", isPresented: $showingResetAlert) {
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 LayoutManager.shared.reset(for: gameId)
                 layout = LayoutManager.shared.load(for: gameId)
@@ -115,8 +160,73 @@ struct LayoutOptionsView: View {
         } message: {
             Text("This will delete the custom layout for this game and revert to the default layout.")
         }
+        .alert(alertTitle, isPresented: $showingAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(alertMessage)
+        }
         .sheet(isPresented: $showingCopySheet) {
             CopyLayoutView(targetGameId: gameId, layout: $layout)
         }
     }
+    
+    private func exportCurrentLayout() {
+        do {
+            let data = try LayoutManager.shared.exportLayout(for: gameId)
+            let fileName = LayoutManager.shared.exportFileName(for: gameId)
+            
+            let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+            try data.write(to: tmpURL, options: .atomic)
+            exportItem = LayoutExportItem(url: tmpURL)
+        } catch {
+            alertTitle = "Export Failed"
+            alertMessage = error.localizedDescription
+            showingAlert = true
+        }
+    }
+    
+    private func handleImport(result: Result<[URL], Error>) {
+        switch result {
+        case .failure(let error):
+            alertTitle = "Import Failed"
+            alertMessage = error.localizedDescription
+            showingAlert = true
+            
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer {
+                if accessing { url.stopAccessingSecurityScopedResource() }
+            }
+            
+            do {
+                let data = try Data(contentsOf: url)
+                let imported = try LayoutManager.shared.importLayout(from: data, for: gameId)
+                layout = imported
+                alertTitle = "Import Successful"
+                alertMessage = "The layout has been applied\(gameId.map { " to \($0)" } ?? "")."
+                showingAlert = true
+            } catch {
+                alertTitle = "Import Failed"
+                alertMessage = error.localizedDescription
+                showingAlert = true
+            }
+        }
+    }
+}
+
+private struct LayoutExportItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

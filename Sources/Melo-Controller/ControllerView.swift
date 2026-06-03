@@ -127,7 +127,7 @@ public struct ControllerView: View {
             // Edit Controls
             if isEditing {
                 if showEditControls {
-                    LayoutEditorView(hideDpad: $hideDpad, hideABXY: $hideABXY, isEditing: $isEditing, showEditControls: $showEditControls, gameId: gameId, layout: $layout)
+                    LayoutEditorView(hideDpad: $hideDpad, hideABXY: $hideABXY, isEditing: $isEditing, showEditControls: $showEditControls, layout: $layout, gameId: gameId)
                         .zIndex(1)
                 } else {
                     VStack {
