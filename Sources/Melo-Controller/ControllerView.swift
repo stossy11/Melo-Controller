@@ -201,14 +201,25 @@ public struct ControllerView: View {
                     }
                 }
 
-                HStack(spacing: 60) {
-                    HStack {
-                        editableButton(.leftStick).padding()
-                        editableButton(.back)
+                if stickButton {
+                    HStack(spacing: 60) {
+                        HStack {
+                            editableButton(.leftStick).padding()
+                            editableButton(.back)
+                        }
+                        HStack {
+                            editableButton(.start)
+                            editableButton(.rightStick).padding()
+                        }
                     }
-                    HStack {
-                        editableButton(.start)
-                        editableButton(.rightStick).padding()
+                } else {
+                    HStack(spacing: 60) {
+                        HStack {
+                            editableButton(.back)
+                        }
+                        HStack {
+                            editableButton(.start)
+                        }
                     }
                 }
             }
