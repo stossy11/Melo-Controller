@@ -137,11 +137,19 @@ public struct ControllerView: View {
                                     showEditControls = true
                                 }
                             }) {
-                                Image(systemName: showEditControls ? "eye.slash" : "eye")
-                                    .padding(12)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
+                                Image(systemName: "eye")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.primary)
+                                    .padding(13)
+                                    .background(.ultraThinMaterial, in: Circle())
+                                    .overlay(
+                                        Circle()
+                                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                                    )
+                                    .shadow(color: .black.opacity(0.18), radius: 10, y: 3)
                             }
+                            .buttonStyle(.plain)
+                            .padding(12)
 
                             Spacer()
                         }

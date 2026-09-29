@@ -17,6 +17,7 @@ public struct ButtonView: View {
     
     @AppStorage("onscreenhandheld") var onscreenjoy: Bool = false
     @AppStorage("joystickDpad") private var joystickDpad = false
+    @AppStorage("buttonSlide") private var buttonSlide = true
     @AppStorage("On-ScreenControllerScale") var controllerScale: Double = 1.0
     @Environment(\.presentationMode) var presentationMode
     
@@ -65,9 +66,15 @@ public struct ButtonView: View {
             }
             .overlay {
                 if !disabled {
-                    ControllerUIButtonViewRepresentable(onPress: handleButtonPress, onRelease: handleButtonRelease)
-                        .allowsHitTesting(true)
-                        .frame(width: size.width * 1.25, height: size.height * 1.25)
+                    ControllerUIButtonViewRepresentable(
+                        onPress: handleButtonPress,
+                        onRelease: handleButtonRelease,
+                        isCircular: !button.isTrigger,
+                        slideEnabled: buttonSlide && !istoggle,
+                        acceptsSlide: buttonSlide && !istoggle
+                    )
+                    .allowsHitTesting(true)
+                    .frame(width: size.width * 1.25, height: size.height * 1.25)
                 }
             }
             .opacity(opacity)

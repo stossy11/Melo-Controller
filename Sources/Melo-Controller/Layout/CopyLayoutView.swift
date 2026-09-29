@@ -86,8 +86,9 @@ struct EditableButtonView: View {
         Group {
             if isEditing {
                 ButtonView(controller: controller, disabled: true, button: button)
-                    .scaleEffect(layout.buttons[button.id]?.scale ?? 1.0)
-                    .border(selectedButton == button.id ? Color.blue : Color.clear, width: 3)
+                    .opacity(layout.buttons[button.id]?.hidden ?? false ? 0.35 : 1)
+                    .editorSelectionRing(isSelected: selectedButton == button.id, isCircular: !button.isTrigger)
+                    .scaleEffect((layout.buttons[button.id]?.scale ?? 1.0) * (selectedButton == button.id ? 1.06 : 1.0))
                     .offset(
                         x: (layout.buttons[button.id]?.offset.width ?? 0) + dragOffset.width,
                         y: (layout.buttons[button.id]?.offset.height ?? 0) + dragOffset.height
@@ -95,6 +96,7 @@ struct EditableButtonView: View {
                     .onTapGesture {
                         selectedButton = selectedButton == button.id ? nil : button.id
                         selectedJoystick = nil
+                        Haptics.shared.play(.light)
                     }
                     .gesture(
                         DragGesture()

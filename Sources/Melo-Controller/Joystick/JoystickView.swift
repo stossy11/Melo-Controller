@@ -19,18 +19,38 @@ struct EditableJoystickView: View {
     @GestureState private var dragOffset = CGSize.zero
     @AppStorage("On-ScreenControllerScale") var controllerScale: Double = 1.0
     
+    private var editorPlaceholder: some View {
+        ZStack {
+            Circle()
+                .fill(Color.gray.opacity(0.22))
+            
+            Circle()
+                .strokeBorder(
+                    Color.white.opacity(0.3),
+                    style: StrokeStyle(lineWidth: 2, dash: [7, 6])
+                )
+            
+            VStack(spacing: 4) {
+                Image(systemName: iscool ? "r.joystick.fill" : "l.joystick.fill")
+                    .font(.system(size: 30, weight: .semibold))
+                Text(iscool ? "Right Stick" : "Left Stick")
+                    .font(.caption2.weight(.semibold))
+            }
+            .foregroundColor(.white.opacity(0.8))
+        }
+        .frame(width: 160, height: 160)
+    }
+    
     var body: some View {
         if isEditing {
-            Circle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 160, height: 160)
-                .overlay(
-                    Text("Joystick")
-                        .font(.caption)
-                        .foregroundColor(.white)
+            editorPlaceholder
+                .opacity(layout.joysticks[id]?.hidden ?? false ? 0.35 : 1)
+                .editorSelectionRing(isSelected: selectedJoystick == id, tint: .green)
+                .scaleEffect(
+                    (layout.joysticks[id]?.scale ?? 1.0)
+                        * controllerScale
+                        * (selectedJoystick == id ? 1.04 : 1.0)
                 )
-                .scaleEffect((layout.joysticks[id]?.scale ?? 1.0) * controllerScale)
-                .border(selectedJoystick == id ? Color.green : Color.clear, width: 3)
                 .offset(
                     x: (layout.joysticks[id]?.offset.width ?? 0) + dragOffset.width,
                     y: (layout.joysticks[id]?.offset.height ?? 0) + dragOffset.height
@@ -38,6 +58,7 @@ struct EditableJoystickView: View {
                 .onTapGesture {
                     selectedJoystick = selectedJoystick == id ? nil : id
                     selectedButton = nil
+                    Haptics.shared.play(.light)
                 }
                 .gesture(
                     DragGesture()
