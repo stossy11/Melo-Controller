@@ -9,7 +9,7 @@ import SwiftUI
 
 class JoystickDPadUIHandler: ObservableObject {
     @Published var gameId: String?
-    
+
     var joystickDpad: Bool {
         get {
             UserDefaults.standard.bool(forKey: "joystickDpad-\(gameId ?? "global")")
@@ -23,7 +23,6 @@ class JoystickDPadUIHandler: ObservableObject {
 
 struct LayoutEditorView: View {
     @AppStorage("On-ScreenControllerScale") private var controllerScale: Double = 1.0
-    @AppStorage("stickButton") private var stickButton = false
     @AppStorage("buttonSlide") private var buttonSlide = true
     @StateObject var joystickDpad = JoystickDPadUIHandler()
     
@@ -33,8 +32,9 @@ struct LayoutEditorView: View {
     @Binding var showEditControls: Bool
     @Binding var layout: LayoutConfig
     
-    @State private var selectedButton: String?
-    @State private var selectedJoystick: String?
+    @Binding var selectedButton: String?
+    @Binding var selectedJoystick: String?
+    
     @State private var showingLayoutOptions = false
     @State private var showingResetAlert = false
     
@@ -42,6 +42,12 @@ struct LayoutEditorView: View {
     @Environment(\.dismiss) var dismiss
     
     var gameId: String?
+    var gameName: String?
+    
+    private var gameTitle: String? {
+        guard let gameId = gameId else { return nil }
+        return gameName ?? gameId
+    }
     
     private var isWide: Bool { verticalSizeClass == .compact || UIDevice.current.userInterfaceIdiom == .pad }
     
@@ -68,12 +74,12 @@ struct LayoutEditorView: View {
             
             HStack(alignment: .top, spacing: 10) {
                 inspector
-                    .frame(maxWidth: 380, alignment: .leading)
+                    .frame(maxWidth: 360, alignment: .leading)
                 
                 Spacer(minLength: 0)
                 
-                if let gameId = gameId {
-                    gameBadge(gameId)
+                if let gameTitle = gameTitle {
+                    gameBadge(gameTitle)
                 }
             }
             
@@ -88,7 +94,7 @@ struct LayoutEditorView: View {
             syncDpadHandler()
         }
         .sheet(isPresented: $showingLayoutOptions) {
-            LayoutOptionsView(gameId: gameId, layout: $layout)
+            LayoutOptionsView(gameId: gameId, gameName: gameName, layout: $layout)
         }
         .alert("Reset This Layout?", isPresented: $showingResetAlert) {
             Button("Cancel", role: .cancel) {}
@@ -102,27 +108,16 @@ struct LayoutEditorView: View {
         }
     }
     
+    
     private var toolbar: some View {
-        HStack(spacing: 8) {
-            if isWide {
-                HStack(spacing: 6) {
-                    Image(systemName: "square.grid.2x2")
-                    Text("Edit Layout")
-                        .fontWeight(.semibold)
-                }
-                .font(.footnote)
-                .foregroundColor(.primary)
-                .padding(.leading, 4)
-                .padding(.trailing, 2)
-            }
-            
-            EditorChip(icon: "eye.slash", title: "Hide", tint: .secondary, showTitle: isWide) {
+        HStack(spacing: 16) {
+            EditorChip(icon: "eye.slash", title: "Hide", showTitle: isWide) {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showEditControls = false
                 }
             }
             
-            EditorChip(icon: "slider.horizontal.3", title: "Options", tint: .blue, showTitle: isWide) {
+            EditorChip(icon: "slider.horizontal.3", title: "Options", showTitle: isWide) {
                 showingLayoutOptions = true
             }
             
@@ -140,47 +135,27 @@ struct LayoutEditorView: View {
             } label: {
                 Text("Done")
                     .font(.footnote.weight(.semibold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Capsule().fill(Color.accentColor))
             }
             .buttonStyle(.plain)
         }
-        .padding(8)
-        .background(
-            Capsule(style: .continuous)
-                .fill(Color.clear)
-                .background(.ultraThinMaterial, in: Capsule(style: .continuous))
-                .overlay(
-                    Capsule(style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-                )
-        )
-        .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 11)
+        .background(.ultraThinMaterial, in: Capsule(style: .continuous))
     }
     
-    private func gameBadge(_ gameId: String) -> some View {
+    private func gameBadge(_ title: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "gamecontroller.fill")
-                .foregroundColor(.blue)
-            Text(gameId)
+            Text(title)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            if LayoutManager.shared.hasCustomLayout(for: gameId) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
-            }
         }
         .font(.caption)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .foregroundColor(.secondary)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .frame(maxWidth: 220)
         .background(.ultraThinMaterial, in: Capsule(style: .continuous))
-        .overlay(
-            Capsule(style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-        )
     }
     
     
@@ -201,27 +176,19 @@ struct LayoutEditorView: View {
     private var globalControls: some View {
         EditorCard {
             EditorCardHeader(
-                icon: "hand.tap",
                 title: "Whole Controller",
-                subtitle: "Tap a button or stick to edit it, drag it to move it.",
-                tint: .accentColor
+                subtitle: "Tap a button or stick to edit it, drag it to move it."
             )
-            
-            EditorDivider()
             
             EditorSliderRow(
                 title: "Controller Size",
-                value: Binding(get: { CGFloat(controllerScale) }, set: { controllerScale = Double($0) }),
-                range: 0.5...2.0,
-                tint: .accentColor
+                value: Binding(get: { CGFloat(controllerScale) }, set: { controllerScale = Double($0) })
             )
             
             EditorToggleRow(
-                icon: "hand.draw",
                 title: "Roll Between Buttons",
                 subtitle: "Slide a finger straight from one button to the next.",
-                isOn: $buttonSlide,
-                tint: .accentColor
+                isOn: $buttonSlide
             )
         }
     }
@@ -230,10 +197,8 @@ struct LayoutEditorView: View {
     private func buttonControls(for buttonId: String) -> some View {
         EditorCard {
             EditorCardHeader(
-                icon: LayoutEditorNaming.icon(for: buttonId),
                 title: LayoutEditorNaming.displayName(for: buttonId),
-                subtitle: "Button",
-                tint: .blue
+                subtitle: "Button"
             ) {
                 EditorResetButton {
                     layout.buttons[buttonId] = nil
@@ -241,48 +206,38 @@ struct LayoutEditorView: View {
                 }
             }
             
-            EditorDivider()
-            
             EditorSliderRow(
                 title: "Size",
                 value: Binding(
                     get: { layout.buttons[buttonId]?.scale ?? 1.0 },
                     set: { layout.buttons[buttonId, default: ButtonLayout()].scale = $0 }
-                ),
-                range: 0.5...2.0,
-                tint: .blue
+                )
             )
             
             EditorToggleRow(
-                icon: "eye.slash",
                 title: "Hide Button",
                 isOn: Binding(
                     get: { layout.buttons[buttonId]?.hidden ?? false },
                     set: { layout.buttons[buttonId, default: ButtonLayout()].hidden = $0 }
-                ),
-                tint: .blue
+                )
             )
             
             EditorToggleRow(
-                icon: "pin",
                 title: "Toggle Instead of Hold",
                 subtitle: "Stays held down until it's tapped again.",
                 isOn: Binding(
                     get: { layout.buttons[buttonId]?.toggle ?? false },
                     set: { layout.buttons[buttonId, default: ButtonLayout()].toggle = $0 }
-                ),
-                tint: .blue
+                )
             )
             
             if buttonId.lowercased().contains("dpad") {
                 EditorToggleRow(
-                    icon: "l.joystick",
                     title: "D-Pad Acts Like a Stick",
                     isOn: Binding(
                         get: { joystickDpad.joystickDpad },
                         set: { joystickDpad.joystickDpad = $0 }
-                    ),
-                    tint: .blue
+                    )
                 )
             }
         }
@@ -292,10 +247,8 @@ struct LayoutEditorView: View {
     private func joystickControls(for joystickId: String) -> some View {
         EditorCard {
             EditorCardHeader(
-                icon: joystickId.lowercased().hasPrefix("right") ? "r.joystick" : "l.joystick",
                 title: LayoutEditorNaming.displayName(for: joystickId),
-                subtitle: "Stick",
-                tint: .green
+                subtitle: "Stick"
             ) {
                 EditorResetButton {
                     layout.joysticks[joystickId] = nil
@@ -303,47 +256,37 @@ struct LayoutEditorView: View {
                 }
             }
             
-            EditorDivider()
-            
             EditorSliderRow(
                 title: "Size",
                 value: Binding(
                     get: { layout.joysticks[joystickId]?.scale ?? 1.0 },
                     set: { layout.joysticks[joystickId, default: JoystickLayout()].scale = $0 }
-                ),
-                range: 0.5...2.0,
-                tint: .green
+                )
             )
             
             EditorToggleRow(
-                icon: "eye.slash",
                 title: "Hide Stick",
                 isOn: Binding(
                     get: { layout.joysticks[joystickId]?.hidden ?? false },
                     set: { layout.joysticks[joystickId, default: JoystickLayout()].hidden = $0 }
-                ),
-                tint: .green
+                )
             )
             
             EditorToggleRow(
-                icon: "rectangle.on.rectangle.slash",
                 title: "Hide Buttons Underneath",
                 subtitle: "Fades the overlapping D-Pad or ABXY buttons while the stick is in use.",
                 isOn: Binding(
                     get: { layout.joysticks[joystickId]?.hide ?? true },
                     set: { layout.joysticks[joystickId, default: JoystickLayout()].hide = $0 }
-                ),
-                tint: .green
+                )
             )
             
             EditorToggleRow(
-                icon: "circle.dashed",
                 title: "Always Show Background",
                 isOn: Binding(
                     get: { layout.joysticks[joystickId]?.background ?? false },
                     set: { layout.joysticks[joystickId, default: JoystickLayout()].background = $0 }
-                ),
-                tint: .green
+                )
             )
         }
     }
@@ -352,7 +295,7 @@ struct LayoutEditorView: View {
 enum LayoutEditorNaming {
     static func displayName(for id: String) -> String {
         if id.count == 1 { return id.uppercased() }
-
+        
         var words: [String] = []
         var current = ""
         for character in id {
@@ -364,7 +307,7 @@ enum LayoutEditorNaming {
             }
         }
         if !current.isEmpty { words.append(current) }
-
+        
         return words
             .map { word -> String in
                 switch word.lowercased() {
@@ -377,48 +320,30 @@ enum LayoutEditorNaming {
             .joined(separator: " ")
             .replacingOccurrences(of: "D Pad", with: "D-Pad")
     }
-
-    static func icon(for buttonId: String) -> String {
-        VirtualControllerButton.registered.first { $0.id == buttonId }?.iconName ?? "circle"
-    }
 }
 
 struct EditorCard<Content: View>: View {
     @ViewBuilder var content: Content
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             content
         }
-        .padding(14)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.18), radius: 14, y: 5)
+        .padding(16)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
 struct EditorCardHeader<Accessory: View>: View {
-    let icon: String
     let title: String
     var subtitle: String?
-    var tint: Color = .accentColor
     @ViewBuilder var accessory: Accessory
     
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(tint)
-                .frame(width: 32, height: 32)
-                .background(Circle().fill(tint.opacity(0.15)))
-            
-            VStack(alignment: .leading, spacing: 1) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.primary)
                 if let subtitle = subtitle {
                     Text(subtitle)
                         .font(.caption2)
@@ -435,8 +360,8 @@ struct EditorCardHeader<Accessory: View>: View {
 }
 
 extension EditorCardHeader where Accessory == EmptyView {
-    init(icon: String, title: String, subtitle: String? = nil, tint: Color = .accentColor) {
-        self.init(icon: icon, title: title, subtitle: subtitle, tint: tint) { EmptyView() }
+    init(title: String, subtitle: String? = nil) {
+        self.init(title: title, subtitle: subtitle) { EmptyView() }
     }
 }
 
@@ -444,30 +369,17 @@ struct EditorResetButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            Text("Reset")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(.orange)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Capsule().fill(Color.orange.opacity(0.15)))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-struct EditorDivider: View {
-    var body: some View {
-        Rectangle()
-            .fill(Color.primary.opacity(0.08))
-            .frame(height: 1)
+        Button("Reset", action: action)
+            .font(.caption.weight(.semibold))
+            .foregroundColor(.orange)
+            .buttonStyle(.plain)
     }
 }
 
 struct EditorChip: View {
     let icon: String
     let title: String
-    var tint: Color = .accentColor
+    var tint: Color?
     var showTitle: Bool = true
     let action: () -> Void
     
@@ -481,12 +393,7 @@ struct EditorChip: View {
                         .font(.caption.weight(.medium))
                 }
             }
-            .foregroundColor(tint == .secondary ? .primary : tint)
-            .padding(.horizontal, showTitle ? 12 : 9)
-            .padding(.vertical, 8)
-            .background(
-                Capsule().fill((tint == .secondary ? Color.primary : tint).opacity(0.12))
-            )
+            .foregroundColor(tint ?? .primary)
         }
         .buttonStyle(.plain)
     }
@@ -497,7 +404,6 @@ struct EditorSliderRow: View {
     @Binding var value: CGFloat
     var range: ClosedRange<CGFloat> = 0.5...2.0
     var step: CGFloat = 0.1
-    var tint: Color = .accentColor
     
     private func nudge(_ amount: CGFloat) {
         let next = (value + amount).rounded(toNearest: step)
@@ -506,7 +412,7 @@ struct EditorSliderRow: View {
     }
     
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             HStack {
                 Text(title)
                     .font(.caption.weight(.medium))
@@ -514,16 +420,15 @@ struct EditorSliderRow: View {
                 Spacer()
                 Text(String(format: "%.1f×", value))
                     .font(.caption.weight(.semibold).monospacedDigit())
-                    .foregroundColor(tint)
+                    .foregroundColor(.secondary)
             }
             
-            HStack(spacing: 10) {
-                EditorStepperButton(icon: "minus", tint: tint) { nudge(-step) }
+            HStack(spacing: 12) {
+                EditorStepperButton(icon: "minus") { nudge(-step) }
                 
                 Slider(value: $value, in: range, step: step)
-                    .tint(tint)
                 
-                EditorStepperButton(icon: "plus", tint: tint) { nudge(step) }
+                EditorStepperButton(icon: "plus") { nudge(step) }
             }
         }
     }
@@ -531,58 +436,38 @@ struct EditorSliderRow: View {
 
 struct EditorStepperButton: View {
     let icon: String
-    var tint: Color = .accentColor
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(tint)
-                .frame(width: 30, height: 30)
-                .background(Circle().fill(tint.opacity(0.15)))
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.secondary)
+                .frame(width: 22, height: 26)
         }
         .buttonStyle(.plain)
     }
 }
 
 struct EditorToggleRow: View {
-    let icon: String
     let title: String
     var subtitle: String?
     @Binding var isOn: Bool
-    var tint: Color = .accentColor
     
     var body: some View {
         Toggle(isOn: $isOn) {
-            HStack(spacing: 10) {
-                Image(systemName: icon)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(isOn ? tint : .secondary)
-                    .frame(width: 24, height: 24)
-                    .background(Circle().fill(Color.primary.opacity(0.06)))
-                
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(.primary)
-                    if let subtitle = subtitle {
-                        Text(subtitle)
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption.weight(.medium))
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
         .toggleStyle(.switch)
-        .tint(tint)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.primary.opacity(0.05))
-        )
     }
 }
 
@@ -612,7 +497,6 @@ struct EditorSelectionRing: ViewModifier {
                     }
                 }
                 .padding(-7)
-                .shadow(color: tint.opacity(0.6), radius: 6)
                 .opacity(isSelected ? 1 : 0)
                 .animation(.easeOut(duration: 0.16), value: isSelected)
             }

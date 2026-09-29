@@ -14,6 +14,7 @@ extension UTType {
 
 struct LayoutOptionsView: View {
     let gameId: String?
+    var gameName: String? = nil
     @Binding var layout: LayoutConfig
     @Environment(\.presentationMode) var presentationMode
     
@@ -37,7 +38,7 @@ struct LayoutOptionsView: View {
                         HStack {
                             Image(systemName: "gamecontroller.fill")
                                 .foregroundColor(.blue)
-                            Text(gameId)
+                            Text(gameName ?? gameId)
                                 .font(.subheadline)
                             Spacer()
                             if LayoutManager.shared.hasCustomLayout(for: gameId) {

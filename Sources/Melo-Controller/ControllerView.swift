@@ -44,6 +44,7 @@ public typealias JoystickSubView = (String, Bool, Binding<Bool>) -> AnyView
 /// ```
 public struct ControllerView: View {
     var gameId: String?
+    var gameName: String?
     var controller: any Controller
     @StateObject var controllerHandler = ControllerHandler()
     @AppStorage("On-ScreenControllerScale") private var controllerScale: Double = 1.0
@@ -74,6 +75,8 @@ public struct ControllerView: View {
     ///     repositioned and scaled. Pass `false` for normal play.
     ///   - gameId: An optional identifier used to load and save a per-game layout.
     ///     Pass `nil` to use the global layout.
+    ///   - gameName: An optional display name for the game, shown in the layout editor
+    ///     instead of `gameId`. The layout is still saved under `gameId`.
     ///   - customControllerLayout: A `@ViewBuilder` closure that composes your own
     ///     controller UI using the provided ``SubView`` and ``JoystickSubView`` factories.
     ///     The `Bool` argument is `true` when the device is in portrait orientation,
@@ -82,10 +85,12 @@ public struct ControllerView: View {
         controller: any Controller,
         isEditing: Bool,
         gameId: String? = nil,
+        gameName: String? = nil,
         @ViewBuilder customControllerLayout: @escaping (@escaping SubView, @escaping JoystickSubView, Bool) -> V
     ) {
         self.isEditing = isEditing
         self.gameId = gameId
+        self.gameName = gameName
         self.controller = controller
         self._customControllerLayout = State(initialValue: { s1, s2, s3 in AnyView(customControllerLayout(s1, s2, s3)) })
     }
@@ -93,10 +98,12 @@ public struct ControllerView: View {
     public init(
         controller: any Controller,
         isEditing: Bool,
-        gameId: String? = nil
+        gameId: String? = nil,
+        gameName: String? = nil
     ) {
         self.isEditing = isEditing
         self.gameId = gameId
+        self.gameName = gameName
         self.controller = controller
     }
 
@@ -127,8 +134,18 @@ public struct ControllerView: View {
             // Edit Controls
             if isEditing {
                 if showEditControls {
-                    LayoutEditorView(hideDpad: $hideDpad, hideABXY: $hideABXY, isEditing: $isEditing, showEditControls: $showEditControls, layout: $layout, gameId: gameId)
-                        .zIndex(1)
+                    LayoutEditorView(
+                        hideDpad: $hideDpad,
+                        hideABXY: $hideABXY,
+                        isEditing: $isEditing,
+                        showEditControls: $showEditControls,
+                        layout: $layout,
+                        selectedButton: $selectedButton,
+                        selectedJoystick: $selectedJoystick,
+                        gameId: gameId,
+                        gameName: gameName
+                    )
+                    .zIndex(1)
                 } else {
                     VStack {
                         HStack {
@@ -142,11 +159,6 @@ public struct ControllerView: View {
                                     .foregroundColor(.primary)
                                     .padding(13)
                                     .background(.ultraThinMaterial, in: Circle())
-                                    .overlay(
-                                        Circle()
-                                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-                                    )
-                                    .shadow(color: .black.opacity(0.18), radius: 10, y: 3)
                             }
                             .buttonStyle(.plain)
                             .padding(12)
